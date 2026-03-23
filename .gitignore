@@ -1,0 +1,12 @@
+# Auth tokens
+gh/hosts.yml
+
+# Neovim generated state
+nvim/plugin/
+nvim/swap/
+nvim/undo/
+nvim/shada/
+nvim/lazy-lock.json
+
+# ZSH compiled files
+zsh/**/*.zwc

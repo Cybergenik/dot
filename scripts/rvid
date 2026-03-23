@@ -1,0 +1,20 @@
+#!/bin/bash
+
+slop=$(slop -f "%x %y %w %h %g %i") || exit 1
+read -r X Y W H G ID <<< "$slop"
+
+# Auto-detect default audio monitor
+# *change pulse source for mic*
+# mic alsa_input.usb-Razer_Inc_Razer_Seiren_Mini_UC2447L03303339-00.mono-fallback
+AUDIO_SOURCE="$(pactl get-default-sink).monitor"
+
+ffmpeg \
+  -framerate 60 -video_size "${W}x${H}" -f x11grab -use_wallclock_as_timestamps 1 -i ":0.0+${X},${Y}" \
+  -thread_queue_size 512 -f pulse -ac 2 -ar 48000 -i "$AUDIO_SOURCE" \
+  -map 0:v:0 -map 1:a:0 \
+  -c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p -g 120 -tune zerolatency \
+  -c:a aac -b:a 160k \
+  -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
+  -shortest -fflags +shortest -max_interleave_delta 0 \
+  -map_metadata -1 -map_chapters -1 -movflags +faststart \
+  "$1"

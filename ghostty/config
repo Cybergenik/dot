@@ -1,0 +1,11 @@
+font-family = JetBrainsMono Nerd Font
+font-size = 11
+theme = GruvboxDarkHard
+
+confirm-close-surface = false
+resize-overlay = never
+window-decoration = none
+gtk-titlebar = false
+
+keybind = ctrl+t=new_tab
+keybind = ctrl+w=close_surface

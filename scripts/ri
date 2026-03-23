@@ -1,0 +1,85 @@
+#!/bin/bash
+
+DOMAIN=cybergenik.com
+HOST=$(whoami)@$DOMAIN
+URL=https://$DOMAIN/~$(whoami)/r/i/
+RPATH=$HOME/public_html/r/i/
+LPATH=$HOME/.r/i/
+
+LFILE=$LPATH.last
+UFILE=$LPATH.url
+
+mkdir -p "$LPATH"
+
+ARGV=("$@")
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		-n|--name) FILE=$LPATH$2.png; shift ;;
+		-u|--url|--upload) OUTURL=1 ;;
+	esac
+	shift
+done
+
+[ -z "$FILE" ] && FILE=$(date +$LPATH%Y%m%d-%H%M%S.png)
+
+set -- "${ARGV[@]}"
+
+# Handle quick actions that don't need a new screenshot
+while [ $# -gt 0 ]; do
+	case "$1" in
+		-c|--copy)
+			if [ -z "$OUTURL" ]; then
+				xclip < "$LFILE"
+			else
+				xclip < "$UFILE"
+			fi
+			exit 0 ;;
+		-l|--last)
+			if [ -z "$OUTURL" ]; then
+				cat "$LFILE" && echo
+			else
+				cat "$UFILE" && echo
+			fi
+			exit 0 ;;
+		-v|--view)
+			if [ -z "$2" ]; then
+				feh "$(cat "$LFILE")" &>/dev/null &
+			else
+				feh "$LPATH$2.png" &>/dev/null &
+			fi
+			exit 0 ;;
+	esac
+	shift
+done
+
+set -- "${ARGV[@]}"
+
+# Take screenshot
+maim -u -n 1 -s "$FILE"
+
+echo -n "$FILE" > "$LFILE"
+[ -n "$OUTURL" ] && echo -n "$URL$(basename "$FILE")" > "$UFILE"
+
+# Post-capture actions
+while [ $# -gt 0 ]; do
+	case "$1" in
+		-e|--echo)
+			if [ -z "$OUTURL" ]; then
+				cat "$LFILE"
+			else
+				cat "$UFILE"
+			fi ;;
+		-x|--xclip)
+			if [ -z "$OUTURL" ]; then
+				xclip < "$LFILE" &
+			else
+				xclip < "$UFILE" &
+			fi ;;
+		-p|--play)
+			feh "$(cat "$LFILE")" &>/dev/null & ;;
+		-u|--url|--upload)
+			scp -r "$FILE" "$HOST:$RPATH" &>/dev/null & ;;
+	esac
+	shift
+done

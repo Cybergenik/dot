@@ -1,0 +1,124 @@
+#!/bin/bash
+
+SCREEN=ra
+
+DOMAIN=cybergenik.com
+HOST=$(whoami)@$DOMAIN
+URL=https://$DOMAIN/~$(whoami)/r/a/
+RPATH=$HOME/public_html/r/a/
+LPATH=$HOME/.r/a/
+
+LFILE=$LPATH.last
+UFILE=$LPATH.url
+
+# SAVE ARGS
+ARGC=$#
+ARGV=$@
+
+while [ ! $# -eq 0 ]
+do
+	case "$1" in
+		--name | -n)
+			FILE=$LPATH$2.mp4
+			;;
+		--url | --upload | -u)
+			OUTURL=1
+			;;
+	esac
+	shift
+done
+
+if [ -z "$FILE" ]
+then
+	FILE=$(date +$LPATH%Y%m%d-%H%M%S.mp4)
+fi 
+
+
+# RESTORE ARGS
+set -- $ARGV
+
+while [ ! $# -eq 0 ]
+do
+	case "$1" in
+		--copy | -c)
+			if [ -z "$OUTURL" ]
+			then
+            	nohup bash -c 'cat '$LFILE' | xclip &' > /dev/null 2>&1
+			else
+            	nohup bash -c 'cat '$UFILE' | xclip &' > /dev/null 2>&1
+			fi 
+			exit 0
+			;;
+		--last | -l)
+			if [ -z "$OUTURL" ]
+			then
+				cat $LFILE && echo
+			else
+				cat $UFILE && echo
+			fi 
+			exit 0 
+			;;
+		--view | -v)
+			if [ -z "$2" ]
+			then
+				nohup vlc $(cat $LFILE) > /dev/null 2>&1 &
+			else
+				nohup vlc $LPATH$2.mp4 > /dev/null 2>&1 &
+			fi
+			exit 0
+			;;
+	esac
+	shift
+done
+
+# RESTORE ARGS
+set -- $ARGV
+
+PS=$(pgrep -f "SCREEN -dmS $SCREEN")
+
+if [ ! -z "$PS" ]
+then
+	screen -S $SCREEN -p 0 -X stuff "q"
+else
+	screen -dmS $SCREEN
+	screen -S $SCREEN -p 0 -X stuff "raud $FILE; exit^M"
+	
+	nohup bash -c 'echo -n '$FILE' > '$LFILE > /dev/null 2>&1
+
+	if [ -n "$OUTURL" ]
+	then
+		nohup bash -c 'echo -n '$URL$(basename $FILE)' > '$UFILE > /dev/null 2>&1
+	fi 
+
+	echo "recording!"
+	exit 0
+fi
+
+while [ ! $# -eq 0 ]
+do
+	case "$1" in
+		--echo | -e)
+			if [ -z "$OUTURL" ]
+			then
+				cat $LFILE
+			else
+				cat $UFILE
+			fi 
+			;;
+		--xclip | -x)
+			if [ -z "$OUTURL" ]
+			then
+            	nohup bash -c 'cat '$LFILE' | xclip &' > /dev/null 2>&1
+			else
+            	nohup bash -c 'cat '$UFILE' | xclip &' > /dev/null 2>&1
+			fi 
+			;;
+		--play | -p)
+			nohup vlc $(cat $LFILE) > /dev/null 2>&1 &
+			;;
+		--url | --upload | -u)
+			nohup scp -r $(cat $LFILE) $HOST:$RPATH > /dev/null 2>&1 &
+			;;
+	esac
+	shift
+done

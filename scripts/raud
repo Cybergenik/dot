@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ffmpeg -loop 1 -framerate 60 -i ~/.r/a/luciano.png -f alsa -ac 2 -i pulse -c:v libx264 -tune stillimage -c:a libopus -b:a 256k -pix_fmt yuv420p -shortest -vf scale=320:-1 -fflags +shortest -max_interleave_delta 500M "$1"

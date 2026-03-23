@@ -1,0 +1,20 @@
+#!/bin/bash
+question=$(rofi -dmenu -p "Claude" -theme-str 'listview { enabled: false; } window { width: 30%; }')
+[ -z "$question" ] && exit
+
+# Show thinking popup while waiting
+rofi -e "Thinking..." -theme-str 'window { width: 20%; }' &
+thinking_pid=$!
+
+answer=$(claude -p "$question" 2>/dev/null)
+
+# Kill thinking popup
+kill $thinking_pid 2>/dev/null
+wait $thinking_pid 2>/dev/null
+
+# Show answer
+if [ -n "$answer" ]; then
+    rofi -e "$answer" -theme-str 'window { width: 40%; }'
+else
+    rofi -e "No response" -theme-str 'window { width: 20%; }'
+fi

@@ -1,0 +1,98 @@
+# Brew
+if [[ $(command -v brew) >/dev/null ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+# GVM (must be before all, because they're shit devs)
+[[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"
+
+# P10K Instant Prompt
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# P10K
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# Z-Shell Plugins
+source "${HOME}/dot/zsh/powerlevel10k/powerlevel10k.zsh-theme"
+source "${HOME}/dot/zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+source "${HOME}/dot/zsh/zsh-autosuggestions/zsh-autosuggestions.zsh"
+
+if [[ -f "${HOME}/.pyenv/bin/pyenv" ]]; then
+  export PYENV_ROOT="$HOME/.pyenv"
+  command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+  eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)" >/dev/null 2>&1
+fi
+
+if [[ $(command -v direnv) >/dev/null ]]; then
+  eval "$(direnv hook zsh)"
+fi
+
+if [[ $(command -v mcfly) >/dev/null ]]; then
+  eval "$(mcfly init zsh)"
+fi
+
+# Z-Shell
+HISTFILE="$HOME/.zsh_history"
+HISTCONTROL=ignoreboth
+HISTSIZE=65536
+SAVEHIST=65536
+setopt extendedhistory
+setopt sharehistory
+setopt appendhistory
+setopt incappendhistory
+setopt histignoredups
+setopt histignorealldups
+setopt histignorespace
+setopt histreduceblanks
+
+# Redraw prompt on resize
+TRAPWINCH() { zle && zle reset-prompt }
+
+# Aliases
+alias vi="nvim"
+alias vim="nvim"
+alias grep="grep --color=auto"
+alias rm="rm -i"
+alias mv="mv -i"
+alias vimdiff="nvim -d"
+if [[ $(uname) == "Darwin" ]]; then
+    alias ls="ls -G"
+else
+    alias ls="ls --color=auto"
+fi
+if [[ $(command -v kubectl) >/dev/null ]]; then
+    alias k="kubectl"
+fi
+if [[ $(command -v terraform) >/dev/null ]]; then
+    alias tf="terraform"
+fi
+if [[ $(command -v tmux) >/dev/null ]]; then
+    alias tmux="TERM=screen-256color-bce tmux"
+fi
+if [[ $(command -v code-insiders) >/dev/null ]]; then
+  alias code="code-insiders"
+fi
+
+# Exports
+export SHELL="zsh"
+export EDITOR="nvim"
+export VISUAL="nvim"
+if infocmp ghostty &>/dev/null; then
+    export TERM="ghostty"
+else
+    export TERM="xterm-256color"
+fi
+export LANG="en_US.UTF-8"
+export LC_ALL="en_US.UTF-8"
+export LC_CTYPE="en_US.UTF-8"
+export PAGER="less -RF"
+export BAT_PAGER="less -RF"
+export MCFLY_KEY_SCHEME="vim"
+export MCFLY_FUZZY="5"
+export MCFLY_RESULTS="100"
+export GOBIN="$HOME/.go/bin"
+export GOPATH="$HOME/.go"
+export PATH="$GOBIN:$HOME/.local/bin:$PATH" 
