@@ -3,6 +3,9 @@ if [[ -x /opt/homebrew/bin/brew ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
+# cargo
+[[ -s "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+
 # GVM (must be before all, because they're shit devs)
 [[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"
 
