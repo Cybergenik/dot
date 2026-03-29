@@ -8,5 +8,8 @@ nvim/undo/
 nvim/shada/
 nvim/lazy-lock.json
 
+# Machine-specific extrarc (contains tokens/secrets)
+extrarc
+
 # ZSH compiled files
 zsh/**/*.zwc

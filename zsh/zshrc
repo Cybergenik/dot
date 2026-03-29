@@ -1,5 +1,5 @@
 # Brew
-if [[ $(command -v brew) >/dev/null ]]; then
+if [[ -x /opt/homebrew/bin/brew ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
@@ -95,4 +95,27 @@ export MCFLY_FUZZY="5"
 export MCFLY_RESULTS="100"
 export GOBIN="$HOME/.go/bin"
 export GOPATH="$HOME/.go"
-export PATH="$GOBIN:$HOME/.local/bin:$PATH" 
+export PATH="$GOBIN:$HOME/.local/bin:$PATH"
+
+# Colima / Docker (macOS only)
+if [[ $(uname) == "Darwin" ]]; then
+    export COLIMA_HOME="$HOME/.colima"
+    export DOCKER_HOST="unix://${COLIMA_HOME}/default/docker.sock"
+fi
+
+# Mason binaries
+export PATH="$HOME/.local/share/nvim/mason/bin:$PATH"
+
+# fnm (fast node manager)
+if command -v fnm &> /dev/null; then
+  eval "$(fnm env)"
+fi
+
+# command edit
+autoload -U edit-command-line
+zle -N edit-command-line
+bindkey '^X^E' edit-command-line
+bindkey -e
+
+# Extra machine-specific config
+[[ -f "$HOME/dot/extrarc" ]] && source "$HOME/dot/extrarc"
