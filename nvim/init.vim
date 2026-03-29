@@ -43,8 +43,11 @@ endif
 "plugins here:
 call plug#begin('~/.config/nvim/plugged')
 
+" render-markdown.nvim
+Plug 'MeanderingProgrammer/render-markdown.nvim'
+
 "Auto Complete:
-Plug 'nvim-treesitter/nvim-treesitter', {'branch': 'master', 'do': ':TSUpdate'}
+Plug 'nvim-treesitter/nvim-treesitter', { 'branch': 'master', 'do': ':TSUpdate' }
 
 Plug 'nvim-lua/plenary.nvim'
 Plug 'nvim-telescope/telescope.nvim', { 'branch': '0.1.x' } "OMG they finally released v0.1!
@@ -107,7 +110,7 @@ lua require("nvim-tree-setup")
 lua require("dapui").setup()
 lua require("dap-go").setup()
 
-colorscheme gruvbox
+colorscheme retrobox
 
 " highlight Normal guibg=none
 
@@ -173,6 +176,30 @@ require('mason-lspconfig').setup({
             capabilities = capabilities,
         })
       end,
+      ["gopls"] = function()
+        require('lspconfig').gopls.setup({
+          capabilities = require('cmp_nvim_lsp').default_capabilities(),
+          settings = {
+            gopls = {
+              buildFlags = {"-tags=dev"},
+            },
+          },
+        })
+      end,
+      ["yamlls"] = function()
+        require('lspconfig').yamlls.setup({
+          capabilities = require('cmp_nvim_lsp').default_capabilities(),
+          settings = {
+            yaml = {
+              schemaStore = {
+                enable = false,
+                url = "",
+              },
+              schemas = {},
+            },
+          },
+        })
+      end,
     },
 })
 
@@ -187,7 +214,7 @@ vim.diagnostic.config({
 
 require('nvim-treesitter.configs').setup {
   -- A list of parser names, or "all"
-  ensure_installed = { "c", "lua", "rust", "javascript", "typescript", "python", "go", "vim", "haskell" },
+  ensure_installed = { "c", "lua", "rust", "javascript", "typescript", "python", "go", "vim" },
 
   -- Install parsers synchronously (only applied to `ensure_installed`)
   sync_install = false,
@@ -343,7 +370,7 @@ highlight Normal guibg=none
 nnoremap <leader>F :NvimTreeFindFile<Return>
 
 " LSP 
-nnoremap <leader>gr <cmd>tab split <bar> lua vim.lsp.buf.definition()<Return>
+nnoremap <leader>gr <cmd>lua vim.lsp.buf.references()<CR>
 nnoremap <leader>gd <cmd>tab split <bar> lua vim.lsp.buf.definition()<Return>
 nnoremap <leader>gq <cmd>lua vim.lsp.buf.format()<Return>
 nnoremap <leader>y <cmd>lua vim.lsp.buf.code_action()<Return>
