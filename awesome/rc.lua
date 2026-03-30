@@ -415,147 +415,42 @@ clientkeys = awful.util.table.join(
         {description = "maximize", group = "client"}),
 
     --- Record Image
-    --- in case of bussin, use scrot -s -
-    awful.key({ modkey, }, "s", 
+
+    awful.key({ modkey }, "s",
         function () awful.spawn.easy_async_with_shell("maim -u -n 1 -s | xclip -selection clipboard -target image/png",
+            function (stdout) naughty.notify { text = "screenshot copied to clipboard" } end)
+        end,
+        {description = "screenshot to clipboard", group = "record"}),
+    awful.key({ modkey, "Shift" }, "s",
+        function () awful.spawn.easy_async_with_shell("ri -p -e",
             function (stdout) naughty.notify { text = "image: " .. stdout } end)
         end,
-        {description = "image", group = "record"}),
-    awful.key({ modkey, "Shift" }, "s", 
-        function () awful.spawn.easy_async_with_shell("ri -p -x -e", 
-            function (stdout) naughty.notify { text = "image: " .. stdout } end)
-        end,
-        {description = "image to clipboard", group = "record"}),
+        {description = "image + feh", group = "record"}),
     awful.key({ modkey, "Control" }, "s",
-        function () awful.spawn.easy_async_with_shell("ri -p -x -e",
-            function (stdout) naughty.notify { text = "image copied to clipboard " .. stdout } end)
-        end,
-        {description = "image upload", group = "record"}),
-    awful.key({ modkey, "Control", "Shift" }, "s",
-        function () awful.spawn.easy_async_with_shell("ri -u -p -x -e",
-            function (stdout) naughty.notify { text = "image: " .. stdout } end)
-        end,
-        {description = "image upload feh", group = "record"}),
-    awful.key({ "Mod1" }, "s",
         function ()
-            awful.prompt.run {
-                prompt       = "image: ",
-                textbox      = awful.screen.focused().mypromptbox.widget,
-                exe_callback = function (input) awful.spawn.easy_async_with_shell("ri -x -e -n " .. input,
-                    function (stdout) naughty.notify { text = "image: " .. stdout } end)
-                end,
-                history_path = awful.util.get_cache_dir() .. "/history_image"
-            }
+            awful.spawn.easy_async_with_shell("ri -r",
+                function (stdout) naughty.notify { text = "image: " .. stdout } end)
         end,
         {description = "image named", group = "record"}),
-    awful.key({ "Mod1", "Shift" }, "s",
-        function ()
-            awful.prompt.run {
-                prompt       = "image: ",
-                textbox      = awful.screen.focused().mypromptbox.widget,
-                exe_callback = function (input) awful.spawn.easy_async_with_shell("ri -p -x -e -n " .. input,
-                    function (stdout) naughty.notify { text = "image: " .. stdout } end)
-                end,
-                history_path = awful.util.get_cache_dir() .. "/history_image"
-            }
-        end,
-        {description = "image named feh", group = "record"}),
-    awful.key({ "Mod1", "Control" }, "s",
-        function ()
-            awful.prompt.run {
-                prompt       = "image: ",
-                textbox      = awful.screen.focused().mypromptbox.widget,
-                exe_callback = function (input) awful.spawn.easy_async_with_shell("ri -u -x -e -n " .. input,
-                    function (stdout) naughty.notify { text = "image: " .. stdout } end)
-                end,
-                history_path = awful.util.get_cache_dir() .. "/history_image"
-            }
-        end,
-        {description = "image named upload", group = "record"}),
-    awful.key({ "Mod1", "Control", "Shift" }, "s",
-        function ()
-            awful.prompt.run {
-                prompt       = "image: ",
-                textbox      = awful.screen.focused().mypromptbox.widget,
-                exe_callback = function (input) awful.spawn.easy_async_with_shell("ri -u -p -x -e -n " .. input,
-                    function (stdout) naughty.notify { text = "image: " .. stdout } end)
-                end,
-                history_path = awful.util.get_cache_dir() .. "/history_image"
-            }
-        end,
-        {description = "image named upload feh", group = "record"}),
-   
+
     --- Record Video
 
-    awful.key({ modkey, }, "v", 
-        function () awful.spawn.easy_async_with_shell("rv -x -e",
+    awful.key({ modkey }, "v",
+        function () awful.spawn.easy_async_with_shell("rv -e",
             function (stdout) naughty.notify { text = "video: " .. stdout } end)
         end,
         {description = "video", group = "record"}),
-
-    awful.key({ modkey, "Shift" }, "v", 
-        function () awful.spawn.easy_async_with_shell("rv -p -x -e", 
+    awful.key({ modkey, "Shift" }, "v",
+        function () awful.spawn.easy_async_with_shell("rv -p -e",
             function (stdout) naughty.notify { text = "video: " .. stdout } end)
         end,
-        {description = "video vlc", group = "record"}),
+        {description = "video + mplayer", group = "record"}),
     awful.key({ modkey, "Control" }, "v",
-        function () awful.spawn.easy_async_with_shell("rv -u -x -e",
-            function (stdout) naughty.notify { text = "video: " .. stdout } end)
-        end,
-        {description = "video upload", group = "record"}),
-    awful.key({ modkey, "Control", "Shift" }, "v",
-        function () awful.spawn.easy_async_with_shell("rv -u -p -x -e",
-            function (stdout) naughty.notify { text = "video: " .. stdout } end)
-        end,
-        {description = "video upload vlc", group = "record"}),
-    awful.key({ "Mod1" }, "v",
         function ()
-            awful.prompt.run {
-                prompt       = "video: ",
-                textbox      = awful.screen.focused().mypromptbox.widget,
-                exe_callback = function (input) awful.spawn.easy_async_with_shell("rv -x -e -n " .. input,
-                    function (stdout) naughty.notify { text = "video: " .. stdout } end)
-                end,
-                history_path = awful.util.get_cache_dir() .. "/history_video"
-            }
+            awful.spawn.easy_async_with_shell("rv -r",
+                function (stdout) naughty.notify { text = "video: " .. stdout } end)
         end,
-        {description = "video named", group = "record"}),
-    awful.key({ "Mod1", "Shift" }, "v",
-        function ()
-            awful.prompt.run {
-                prompt       = "video: ",
-                textbox      = awful.screen.focused().mypromptbox.widget,
-                exe_callback = function (input) awful.spawn.easy_async_with_shell("rv -p -x -e -n " .. input,
-                    function (stdout) naughty.notify { text = "video: " .. stdout } end)
-                end,
-                history_path = awful.util.get_cache_dir() .. "/history_video"
-            }
-        end,
-        {description = "video named feh", group = "record"}),
-    awful.key({ "Mod1", "Control" }, "v",
-        function ()
-            awful.prompt.run {
-                prompt       = "video: ",
-                textbox      = awful.screen.focused().mypromptbox.widget,
-                exe_callback = function (input) awful.spawn.easy_async_with_shell("rv -u -x -e -n " .. input,
-                    function (stdout) naughty.notify { text = "video: " .. stdout } end)
-                end,
-                history_path = awful.util.get_cache_dir() .. "/history_video"
-            }
-        end,
-        {description = "video named upload", group = "record"}),
-    awful.key({ "Mod1", "Control", "Shift" }, "v",
-        function ()
-            awful.prompt.run {
-                prompt       = "video: ",
-                textbox      = awful.screen.focused().mypromptbox.widget,
-                exe_callback = function (input) awful.spawn.easy_async_with_shell("rv -u -p -x -e -n " .. input,
-                    function (stdout) naughty.notify { text = "video: " .. stdout } end)
-                end,
-                history_path = awful.util.get_cache_dir() .. "/history_video"
-            }
-        end,
-        {description = "video named upload vlc", group = "record"})
+        {description = "video named", group = "record"})
 )
 
 -- Bind all key numbers to tags.

@@ -2,14 +2,11 @@
 
 SCREEN=rv
 
-DOMAIN=cybergenik.com
-HOST=$(whoami)@$DOMAIN
-URL=https://$DOMAIN/~$(whoami)/r/v/
-RPATH=$HOME/public_html/r/v/
-LPATH=$HOME/.r/v/
+SAVE_PATH=$HOME/media/vids/
 
-LFILE=$LPATH.last
-UFILE=$LPATH.url
+LAST_FILE=$SAVE_PATH.last
+
+mkdir -p "$SAVE_PATH"
 
 # SAVE ARGS
 ARGC=$#
@@ -19,10 +16,7 @@ while [ ! $# -eq 0 ]
 do
 	case "$1" in
 		--name | -n)
-			FILE=$LPATH$2.mp4
-			;;
-		--url | --upload | -u)
-			OUTURL=1
+			FILE=$SAVE_PATH$2.mp4
 			;;
 	esac
 	shift
@@ -30,7 +24,7 @@ done
 
 if [ -z "$FILE" ]
 then
-	FILE=$(date +$LPATH%Y%m%d-%H%M%S.mp4)
+	FILE=$(date +$SAVE_PATH%Y%m%d-%H%M%S.mp4)
 fi
 
 
@@ -41,29 +35,19 @@ while [ ! $# -eq 0 ]
 do
 	case "$1" in
 		--copy | -c)
-			if [ -z "$OUTURL" ]
-			then
-            	nohup bash -c 'cat '$LFILE' | xclip &' > /dev/null 2>&1
-			else
-            	nohup bash -c 'cat '$UFILE' | xclip &' > /dev/null 2>&1
-			fi
+			nohup bash -c 'cat '$LAST_FILE' | xclip &' > /dev/null 2>&1
 			exit 0
 			;;
 		--last | -l)
-			if [ -z "$OUTURL" ]
-			then
-				cat $LFILE && echo
-			else
-				cat $UFILE && echo
-			fi
+			cat $LAST_FILE && echo
 			exit 0
 			;;
 		--view | -v)
 			if [ -z "$2" ]
 			then
-				nohup vlc $(cat $LFILE) > /dev/null 2>&1 &
+				nohup mplayer $(cat $LAST_FILE) > /dev/null 2>&1 &
 			else
-				nohup vlc $LPATH$2.mp4 > /dev/null 2>&1 &
+				nohup mplayer $SAVE_PATH$2.mp4 > /dev/null 2>&1 &
 			fi
 			exit 0
 			;;
@@ -85,12 +69,7 @@ else
 	sleep .2
 	screen -S $SCREEN -p 0 -X stuff "rvid $FILE; exit^M"
 
-	nohup bash -c 'echo -n '$FILE' > '$LFILE > /dev/null 2>&1
-
-	if [ -n "$OUTURL" ]
-	then
-		nohup bash -c 'echo -n '$URL$(basename $FILE)' > '$UFILE > /dev/null 2>&1
-	fi
+	nohup bash -c 'echo -n '$FILE' > '$LAST_FILE > /dev/null 2>&1
 
 	echo "recording!"
 	exit 0
@@ -99,27 +78,35 @@ fi
 while [ ! $# -eq 0 ]
 do
 	case "$1" in
-		--echo | -e)
-			if [ -z "$OUTURL" ]
-			then
-				cat $LFILE
-			else
-				cat $UFILE
+		--rename | -r)
+			result=$(mktemp)
+			prevloc=$(mktemp)
+			ROFI_SAVE_DIR="$SAVE_PATH" ROFI_SAVE_EXT=.mp4 ROFI_SAVE_RESULT="$result" ROFI_SAVE_PREVLOC="$prevloc" rofi -show save -modi "save:rofi-save" >/dev/null 2>&1
+			new=$(cat "$result")
+			rm -f "$result" "$prevloc"
+			old=$(cat "$LAST_FILE")
+			if [ -n "$new" ] && [ "$new" != "$old" ]; then
+				if [ -e "$new" ]; then
+					confirm=$(echo -e "Y\nn" | rofi -dmenu -p "overwrite $(basename "$new")? [Y/n]" 2>/dev/null)
+					[ "$confirm" = "n" ] && new=""
+				fi
+				if [ -n "$new" ]; then
+					mkdir -p "$(dirname "$new")"
+					mv "$old" "$new"
+					echo -n "$new" > "$LAST_FILE"
+				fi
 			fi
+			xclip >&- 2>&- < "$LAST_FILE"
+			cat "$LAST_FILE"
+			;;
+		--echo | -e)
+			cat $LAST_FILE
 			;;
 		--xclip | -x)
-			if [ -z "$OUTURL" ]
-			then
-            	nohup bash -c 'cat '$LFILE' | xclip &' > /dev/null 2>&1
-			else
-            	nohup bash -c 'cat '$UFILE' | xclip &' > /dev/null 2>&1
-			fi
+			nohup bash -c 'cat '$LAST_FILE' | xclip &' > /dev/null 2>&1
 			;;
 		--play | -p)
-			nohup vlc $(cat $LFILE) > /dev/null 2>&1 &
-			;;
-		--url | --upload | -u)
-			nohup scp -r $(cat $LFILE) $HOST:$RPATH > /dev/null 2>&1 &
+			nohup mplayer $(cat $LAST_FILE) > /dev/null 2>&1 &
 			;;
 	esac
 	shift

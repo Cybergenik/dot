@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+# rofi script mode for picking a save path
+# Usage: ROFI_SAVE_DIR=/start ROFI_SAVE_EXT=.png ROFI_SAVE_RESULT=/tmp/out ROFI_SAVE_PREVLOC=/tmp/prev rofi -show save -modi "save:rofi-save"
+
+CUR_DIR="${ROFI_SAVE_DIR:-$HOME}"
+EXT="${ROFI_SAVE_EXT:-}"
+
+[ -s "$ROFI_SAVE_PREVLOC" ] && CUR_DIR=$(cat "$ROFI_SAVE_PREVLOC")
+
+if [ -n "$@" ]; then
+    if [[ "$@" == /* ]]; then
+        CUR_DIR="$@"
+    else
+        CUR_DIR="$CUR_DIR/$@"
+    fi
+fi
+
+# Not a directory — this is the final selection
+if [ ! -d "$CUR_DIR" ]; then
+    readlink -m "${CUR_DIR}${EXT}" > "$ROFI_SAVE_RESULT"
+    rm -f "$ROFI_SAVE_PREVLOC"
+    exec 1>&-
+    exit 0
+fi
+
+# List directory contents
+CUR_DIR=$(readlink -e "$CUR_DIR")
+echo "$CUR_DIR" > "$ROFI_SAVE_PREVLOC"
+pushd "$CUR_DIR" > /dev/null
+
+printf '\0message\x1f%s\n' "$CUR_DIR"
+echo ".."
+ls -d */ 2>/dev/null | sed 's|/$||'

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 question=$(rofi -dmenu -p "Claude" -theme-str 'listview { enabled: false; } window { width: 30%; }')
 [ -z "$question" ] && exit
 
