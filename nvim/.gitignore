@@ -2,3 +2,4 @@ plugged/*
 undodir/*
 autoload/*
 .netrwhist
+lazy-lock.json
