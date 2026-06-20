@@ -29,11 +29,11 @@ if [[ -f "${HOME}/.pyenv/bin/pyenv" ]]; then
   eval "$(pyenv virtualenv-init -)" >/dev/null 2>&1
 fi
 
-if [[ $(command -v direnv) >/dev/null ]]; then
+if command -v direnv >/dev/null 2>&1; then
   eval "$(direnv hook zsh)"
 fi
 
-if [[ $(command -v mcfly) >/dev/null ]]; then
+if command -v mcfly >/dev/null 2>&1; then
   eval "$(mcfly init zsh)"
 fi
 
@@ -66,28 +66,24 @@ if [[ $(uname) == "Darwin" ]]; then
 else
     alias ls="ls --color=auto"
 fi
-if [[ $(command -v kubectl) >/dev/null ]]; then
+if command -v kubectl >/dev/null 2>&1; then
     alias k="kubectl"
 fi
-if [[ $(command -v terraform) >/dev/null ]]; then
+if command -v terraform >/dev/null 2>&1; then
     alias tf="terraform"
 fi
-if [[ $(command -v tmux) >/dev/null ]]; then
+if command -v tmux >/dev/null 2>&1; then
     alias tmux="TERM=screen-256color-bce tmux"
 fi
-if [[ $(command -v code-insiders) >/dev/null ]]; then
+if command -v code-insiders >/dev/null 2>&1; then
   alias code="code-insiders"
 fi
 
 # Exports
-export SHELL="zsh"
+#export SHELL="zsh"
 export EDITOR="nvim"
 export VISUAL="nvim"
-if infocmp ghostty &>/dev/null; then
-    export TERM="ghostty"
-else
-    export TERM="xterm-256color"
-fi
+export TERM="xterm-256color"
 export LANG="en_US.UTF-8"
 export LC_ALL="en_US.UTF-8"
 export LC_CTYPE="en_US.UTF-8"
