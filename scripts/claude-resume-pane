@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# Re-enter this pane's Claude conversation after a tmux-resurrect restore.
+#
+# resurrect relaunches panes by name, so the saved command line is rewritten to
+# `claude-resume-pane` (see @resurrect-processes in tmux.conf). We look up our
+# own coordinates in the map written at save time and exec the real claude.
+#
+# Falls back to a fresh `claude` whenever the recorded conversation cannot be
+# resumed, so a restored pane is always usable.
+
+set -uo pipefail
+
+state_base="${XDG_STATE_HOME:-$HOME/.local/state}/claude-tmux-resume"
+
+# Map is namespaced per tmux socket, matching claude-tmux-save-sessions: pane
+# coordinates are only meaningful within one server.
+socket_suffix=""
+if [ -n "${TMUX:-}" ]; then
+  socket_path="$(tmux display-message -p '#{socket_path}' 2>/dev/null || true)"
+  if [ -n "$socket_path" ]; then
+    socket_suffix="-$(printf '%s' "$socket_path" | sed 's/[^A-Za-z0-9_.-]/_/g')"
+  fi
+fi
+map="$state_base/restore-map${socket_suffix}"
+[ -r "$map" ] || map="$state_base/restore-map"
+
+claude_bin="$(command -v claude || true)"
+if [ -z "$claude_bin" ]; then
+  echo "claude-resume-pane: no claude on PATH" >&2
+  exec "${SHELL:-/bin/zsh}"
+fi
+
+# Stagger startups: restoring several agents at once means several concurrent
+# apiKeyHelper calls and MCP server spawns. Offset by pane index to spread them.
+stagger() {
+  local idx="${1:-0}"
+  if [ "$idx" -gt 0 ] 2>/dev/null; then
+    sleep "$(awk -v i="$idx" 'BEGIN { printf "%.1f", (i > 6 ? 6 : i) * 1.5 }')"
+  fi
+}
+
+resolve_coords() {
+  # -t "$TMUX_PANE" is required: a bare display-message reports the client's
+  # active pane, not the pane running this script.
+  [ -n "${TMUX_PANE:-}" ] || return 1
+  tmux display-message -p -t "$TMUX_PANE" \
+    '#{session_name}:#{window_index}.#{pane_index}' 2>/dev/null
+}
+
+session_id=""
+coords="$(resolve_coords || true)"
+
+if [ -n "$coords" ] && [ -r "$map" ]; then
+  session_id="$(awk -F'\t' -v key="$coords" '$1 == key { print $2; exit }' "$map")"
+fi
+
+pane_index="${coords##*.}"
+[[ "$pane_index" =~ ^[0-9]+$ ]] || pane_index=0
+
+# Validate before committing, because a failed `--resume` is indistinguishable
+# from the user simply quitting: both just exit. Deciding up front lets us
+# always exec, so the pane's process really is claude and quitting means quit.
+if [ -n "$session_id" ]; then
+  transcript="$(awk -F'\t' -v key="$coords" '$1 == key { print $4; exit }' "$map")"
+  if [ -n "$transcript" ] && [ ! -r "$transcript" ]; then
+    echo "claude-resume-pane: transcript for $session_id is gone; starting fresh." >&2
+    session_id=""
+  elif pgrep -f -- "--resume $session_id" >/dev/null 2>&1; then
+    echo "claude-resume-pane: session $session_id already running; starting fresh." >&2
+    session_id=""
+  fi
+fi
+
+stagger "$pane_index"
+
+if [ -n "$session_id" ]; then
+  exec "$claude_bin" --resume "$session_id" "$@"
+fi
+
+exec "$claude_bin" "$@"

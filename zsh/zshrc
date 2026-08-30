@@ -33,10 +33,6 @@ if command -v direnv >/dev/null 2>&1; then
   eval "$(direnv hook zsh)"
 fi
 
-if command -v mcfly >/dev/null 2>&1; then
-  eval "$(mcfly init zsh)"
-fi
-
 # Z-Shell
 HISTFILE="$HOME/.zsh_history"
 HISTCONTROL=ignoreboth
@@ -116,5 +112,27 @@ zle -N edit-command-line
 bindkey '^X^E' edit-command-line
 bindkey -e
 
+# mcfly: init AFTER `bindkey -e` so its `bindkey '^R'` lands in the active
+# (emacs) keymap. Otherwise, when $EDITOR=nvim makes zsh start in viins (e.g.
+# tmux panes inheriting the server env), mcfly binds ^R into viins and the
+# later `bindkey -e` strands it in an inactive keymap.
+if command -v mcfly >/dev/null 2>&1; then
+  eval "$(mcfly init zsh)"
+fi
+
 # Extra machine-specific config
 [[ -f "$HOME/dot/extrarc" ]] && source "$HOME/dot/extrarc"
+
+export PATH="$HOME/.go/bin:$PATH"
+
+# pnpm
+if [[ "$(uname)" == "Darwin" ]]; then
+  export PNPM_HOME="$HOME/Library/pnpm"
+else
+  export PNPM_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/pnpm"
+fi
+case ":$PATH:" in
+  *":$PNPM_HOME/bin:"*) ;;
+  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
+esac
+# pnpm end

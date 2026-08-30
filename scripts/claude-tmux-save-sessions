@@ -1,0 +1,195 @@
+#!/usr/bin/env python3
+"""Snapshot live Claude panes as resurrect coordinates.
+
+Invoked from tmux-resurrect's @resurrect-hook-post-save-all, i.e. every time
+continuum autosaves. Pane ids are useless after a reboot, so this re-resolves
+each registered pane to `session:window.pane` at save time -- late enough that
+`renumber-windows on` has already settled.
+
+Output (tab-separated, one line per pane) is what `claude-resume-pane` reads:
+
+    0:2.3<TAB><session-uuid><TAB><cwd><TAB><transcript-path>
+"""
+
+import json
+import os
+import re
+import subprocess
+import sys
+
+
+def state_base():
+    base = os.environ.get("XDG_STATE_HOME") or os.path.join(
+        os.path.expanduser("~"), ".local", "state"
+    )
+    return os.path.join(base, "claude-tmux-resume")
+
+
+def process_table():
+    """Map pid -> (ppid, command) so we can look for claude below a pane's shell."""
+    try:
+        proc = subprocess.run(
+            ["ps", "-axo", "pid=,ppid=,command="],
+            capture_output=True,
+            stdin=subprocess.DEVNULL,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if proc.returncode != 0:
+        return {}
+
+    table = {}
+    for line in proc.stdout.splitlines():
+        parts = line.split(None, 2)
+        if len(parts) < 3:
+            continue
+        try:
+            table[int(parts[0])] = (int(parts[1]), parts[2])
+        except ValueError:
+            continue
+    return table
+
+
+def is_claude_command(command):
+    """True when argv[0]'s basename is claude, ignoring wrappers and paths."""
+    head = command.split()[0] if command.split() else ""
+    return os.path.basename(head) == "claude"
+
+
+def pane_runs_claude(pane_pid, table):
+    """Walk descendants of the pane's shell looking for a live claude process.
+
+    Checking the tree rather than pane_current_command matters: a pane whose
+    agent is mid-Bash-tool reports the tool's name, and would otherwise be
+    dropped from the snapshot.
+    """
+    children = {}
+    for pid, (ppid, _cmd) in table.items():
+        children.setdefault(ppid, []).append(pid)
+
+    stack = [pane_pid]
+    seen = set()
+    while stack:
+        pid = stack.pop()
+        if pid in seen:
+            continue
+        seen.add(pid)
+        entry = table.get(pid)
+        if entry and is_claude_command(entry[1]):
+            return True
+        stack.extend(children.get(pid, ()))
+    return False
+
+
+def tmux_panes():
+    fmt = "#{pane_id}\t#{session_name}:#{window_index}.#{pane_index}\t#{pane_pid}"
+    try:
+        proc = subprocess.run(
+            ["tmux", "list-panes", "-a", "-F", fmt],
+            capture_output=True,
+            stdin=subprocess.DEVNULL,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if proc.returncode != 0:
+        return []
+
+    panes = []
+    for line in proc.stdout.splitlines():
+        fields = line.split("\t")
+        if len(fields) != 3:
+            continue
+        try:
+            panes.append((fields[0], fields[1], int(fields[2])))
+        except ValueError:
+            continue
+    return panes
+
+
+def map_path(base):
+    """Per-socket map path.
+
+    `list-panes -a` only sees the current tmux server, and coordinates are
+    per-server, so a save on one socket must not clobber another's map.
+    """
+    return os.path.join(base, "restore-map" + socket_suffix())
+
+
+def socket_suffix():
+    try:
+        proc = subprocess.run(
+            ["tmux", "display-message", "-p", "#{socket_path}"],
+            capture_output=True,
+            stdin=subprocess.DEVNULL,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    path = proc.stdout.strip() if proc.returncode == 0 else ""
+    if not path:
+        return ""
+    return "-" + re.sub(r"[^A-Za-z0-9_.-]", "_", path)
+
+
+def main():
+    base = state_base()
+    live = os.path.join(base, "live")
+    if not os.path.isdir(live):
+        return 0
+
+    table = process_table()
+    rows = []
+
+    for pane_id, coords, pane_pid in tmux_panes():
+        record = os.path.join(live, pane_id.lstrip("%") + ".json")
+        try:
+            with open(record) as handle:
+                payload = json.load(handle)
+        except (OSError, ValueError):
+            continue
+
+        session_id = payload.get("session_id", "")
+        if not session_id:
+            continue
+
+        # A SIGKILLed agent leaves its record behind; don't resurrect a pane
+        # that is really just a shell.
+        if not pane_runs_claude(pane_pid, table):
+            continue
+
+        rows.append(
+            (
+                coords,
+                session_id,
+                payload.get("cwd", ""),
+                payload.get("transcript_path", ""),
+            )
+        )
+
+    target = map_path(base)
+    tmp = target + ".tmp"
+    try:
+        os.makedirs(base, mode=0o700, exist_ok=True)
+        with open(tmp, "w") as handle:
+            for coords, session_id, cwd, transcript in rows:
+                handle.write(
+                    "%s\t%s\t%s\t%s\n" % (coords, session_id, cwd, transcript)
+                )
+        os.replace(tmp, target)
+    except OSError:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+        return 0
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

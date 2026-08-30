@@ -13,3 +13,7 @@ extrarc
 
 # ZSH compiled files
 zsh/**/*.zwc
+
+# Python bytecode
+__pycache__/
+*.pyc

@@ -36,6 +36,28 @@ for script in "$DOT"/scripts/*; do
     ln -sf "$script" "$HOME/.local/bin/$(basename "$script")"
 done
 
+# Claude Code hooks (referenced by absolute path from ~/.claude/settings.json)
+echo "Symlinking Claude hooks..."
+mkdir -p "$HOME/.claude/hooks"
+for hook in "$DOT"/claude/hooks/*; do
+    ln -sf "$hook" "$HOME/.claude/hooks/$(basename "$hook")"
+done
+
+# The hooks above do nothing until settings.json invokes them. settings.json is
+# untracked (machine-specific + private), so merge the entries instead.
+python3 "$DOT/claude/register-hooks.py" || echo "Warning: could not register Claude hooks"
+
+# tmux plugin manager, required by the @plugin lines in tmux/tmux.conf
+TPM_DIR="$HOME/.tmux/plugins/tpm"
+if [ ! -d "$TPM_DIR" ]; then
+    echo "Installing tmux plugin manager..."
+    git clone --depth 1 https://github.com/tmux-plugins/tpm "$TPM_DIR"
+fi
+if command -v tmux >/dev/null 2>&1; then
+    echo "Installing tmux plugins..."
+    "$TPM_DIR/bin/install_plugins" || echo "Warning: tmux plugin install failed"
+fi
+
 # Install JetBrainsMono Nerd Font
 if $IS_MAC; then
     FONT_DIR="$HOME/Library/Fonts"
