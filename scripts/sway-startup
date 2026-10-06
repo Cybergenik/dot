@@ -12,16 +12,19 @@ wait_for() {
 	done
 }
 
-swaymsg -q workspace number 2
-signal-desktop & wait_for 2 1
-proton-mail & wait_for 2 2
-discord & wait_for 2 3
+# workspace 2 fills in the background: assign rules in the sway config send
+# these there without switching, and launching one at a time keeps the order
+(
+	signal-desktop & wait_for 2 1
+	proton-mail & wait_for 2 2
+	discord & wait_for 2 3
+) &
 
 # brave restores both of its windows; ghostty goes between them. Sway's exit
 # kills brave, so it thinks it crashed: clear that to skip the restore prompt
 sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/' \
 	~/.config/BraveSoftware/Brave-Browser/Default/Preferences
-swaymsg -q workspace number 1
 brave-browser --restore-last-session & wait_for 1 2
+swaymsg -q '[workspace=1] focus' 2>/dev/null
 swaymsg -q focus left, focus left
 ghostty & wait_for 1 3

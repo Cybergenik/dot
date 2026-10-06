@@ -61,8 +61,9 @@ pane_index="${coords##*.}"
 # from the user simply quitting: both just exit. Deciding up front lets us
 # always exec, so the pane's process really is claude and quitting means quit.
 if [ -n "$session_id" ]; then
-  transcript="$(awk -F'\t' -v key="$coords" '$1 == key { print $4; exit }' "$map")"
-  if [ -n "$transcript" ] && [ ! -r "$transcript" ]; then
+  # The recorded transcript_path follows the pane's current directory, but a
+  # conversation keeps its file in the project it started in, so look anywhere.
+  if ! compgen -G "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects/*/$session_id.jsonl" >/dev/null; then
     echo "claude-resume-pane: transcript for $session_id is gone; starting fresh." >&2
     session_id=""
   elif pgrep -f -- "--resume $session_id" >/dev/null 2>&1; then
