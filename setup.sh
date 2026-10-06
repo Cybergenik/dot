@@ -28,6 +28,10 @@ ln -sfn "$DOT/gh" "$HOME/.config/gh"
 if ! $IS_MAC; then
     ln -sfn "$DOT/awesome" "$HOME/.config/awesome"
     ln -sfn "$DOT/rofi" "$HOME/.config/rofi"
+    ln -sfn "$DOT/sway" "$HOME/.config/sway"
+    ln -sfn "$DOT/waybar" "$HOME/.config/waybar"
+    ln -sfn "$DOT/mako" "$HOME/.config/mako"
+    ln -sf "$DOT/zsh/zprofile" "$HOME/.zprofile"
 fi
 
 # Symlink scripts

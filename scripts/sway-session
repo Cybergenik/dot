@@ -1,0 +1,21 @@
+#!/bin/sh
+# Launch sway from a tty login
+
+. "$HOME/.profile"
+
+export XDG_CURRENT_DESKTOP=sway
+export XDG_SESSION_DESKTOP=sway
+export XDG_SESSION_TYPE=wayland
+export MOZ_ENABLE_WAYLAND=1
+export ELECTRON_OZONE_PLATFORM_HINT=auto
+export QT_QPA_PLATFORM="wayland;xcb"
+
+# sway only runs on NVIDIA's proprietary driver with an explicit opt-in
+if [ -d /sys/module/nvidia_drm ]; then
+	export GBM_BACKEND=nvidia-drm
+	export __GLX_VENDOR_LIBRARY_NAME=nvidia
+	set -- --unsupported-gpu "$@"
+fi
+
+mkdir -p "$HOME/.cache"
+exec sway "$@" > "$HOME/.cache/sway.log" 2>&1

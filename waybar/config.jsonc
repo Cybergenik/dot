@@ -1,0 +1,22 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 24,
+    "modules-left": ["sway/workspaces", "sway/mode", "sway/scratchpad"],
+    "modules-center": ["sway/window"],
+    "modules-right": ["tray", "clock"],
+    "sway/scratchpad": {
+        "format": "{count} hidden",
+        "show-empty": false
+    },
+    "sway/window": {
+        "max-length": 80
+    },
+    "tray": {
+        "spacing": 8
+    },
+    "clock": {
+        "format": "{:%a %b %d, %H:%M}",
+        "tooltip-format": "{calendar}"
+    }
+}

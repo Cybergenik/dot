@@ -1,0 +1,4 @@
+# Start sway when logging in on tty1
+if [[ -z $WAYLAND_DISPLAY && -z $DISPLAY && $TTY == /dev/tty1 ]] && (( $+commands[sway] )); then
+    exec ~/.local/bin/sway-session
+fi

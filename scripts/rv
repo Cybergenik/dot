@@ -1,83 +1,109 @@
 #!/bin/bash
 
-SCREEN=rv
-
 SAVE_PATH=$HOME/media/vids/
 
 LAST_FILE=$SAVE_PATH.last
+PID_FILE=$SAVE_PATH.pid
+LOG_FILE=$SAVE_PATH.log
 
 mkdir -p "$SAVE_PATH"
 
-# SAVE ARGS
+# copy stdin to the clipboard
+clip() {
+	if [ -n "$WAYLAND_DISPLAY" ]; then
+		wl-copy
+	else
+		xclip -selection clipboard
+	fi >/dev/null 2>&1
+}
+
+# print the region to record as "X Y W H"
+select_region() {
+	if [ -n "$WAYLAND_DISPLAY" ]; then
+		slurp -f "%x %y %w %h"
+	else
+		slop -f "%x %y %w %h"
+	fi
+}
+
+# pid of the running recorder, if any
+recorder_pid() {
+	local pid
+	pid=$(cat "$PID_FILE" 2>/dev/null) || return
+	case "$(cat "/proc/$pid/comm" 2>/dev/null)" in
+		ffmpeg|wf-recorder) echo "$pid" ;;
+	esac
+}
+
 ARGV=("$@")
 
-while [ ! $# -eq 0 ]
-do
+while [ $# -gt 0 ]; do
 	case "$1" in
-		--name | -n)
-			FILE="$SAVE_PATH$2.mp4"
-			;;
+		-n|--name) FILE="$SAVE_PATH$2.mp4"; shift ;;
 	esac
 	shift
 done
 
-if [ -z "$FILE" ]
-then
-	FILE=$(date +"${SAVE_PATH}%Y-%m-%d_%H-%M-%S.mp4")
-fi
+[ -z "$FILE" ] && FILE=$(date +"${SAVE_PATH}%Y-%m-%d_%H-%M-%S.mp4")
 
-
-# RESTORE ARGS
 set -- "${ARGV[@]}"
 
-while [ ! $# -eq 0 ]
-do
+# Handle quick actions that don't touch the recorder
+while [ $# -gt 0 ]; do
 	case "$1" in
-		--copy | -c)
-			xclip -selection clipboard >/dev/null 2>&1 < "$LAST_FILE"
-			exit 0
-			;;
-		--last | -l)
+		-c|--copy)
+			clip < "$LAST_FILE"
+			exit 0 ;;
+		-l|--last)
 			cat "$LAST_FILE" && echo
-			exit 0
-			;;
-		--view | -v)
-			if [ -z "$2" ]
-			then
-				nohup mplayer "$(cat "$LAST_FILE")" > /dev/null 2>&1 &
+			exit 0 ;;
+		-v|--view)
+			if [ -z "$2" ]; then
+				mplayer "$(cat "$LAST_FILE")" &>/dev/null &
 			else
-				nohup mplayer "$SAVE_PATH$2.mp4" > /dev/null 2>&1 &
+				mplayer "$SAVE_PATH$2.mp4" &>/dev/null &
 			fi
-			exit 0
-			;;
+			exit 0 ;;
 	esac
 	shift
 done
 
-# RESTORE ARGS
 set -- "${ARGV[@]}"
 
-PS=$(pgrep -f "SCREEN -dmS $SCREEN")
+PID=$(recorder_pid)
 
-if [ ! -z "$PS" ]
-then
-	sleep .2
-	screen -S $SCREEN -p 0 -X stuff "q"
-else
-	screen -dmS $SCREEN
-	sleep .2
-	screen -S $SCREEN -p 0 -X stuff "rvid $(printf %q "$FILE"); exit^M"
+# Not recording yet: pick a region and start
+if [ -z "$PID" ]; then
+	REGION=$(select_region) || exit 1
+	read -r X Y W H <<< "$REGION"
+
+	# libx264 needs even dimensions
+	rvid "$X" "$Y" $((W / 2 * 2)) $((H / 2 * 2)) "$FILE" > "$LOG_FILE" 2>&1 < /dev/null &
+	echo $! > "$PID_FILE"
+
+	# bail out if the recorder died on startup
+	sleep 1
+	if ! kill -0 $! 2>/dev/null; then
+		rm -f "$PID_FILE"
+		[ -s "$FILE" ] || rm -f "$FILE"
+		echo "failed: $(tail -n 1 "$LOG_FILE")"
+		exit 1
+	fi
 
 	echo -n "$FILE" > "$LAST_FILE"
-
 	echo "recording!"
 	exit 0
 fi
 
-while [ ! $# -eq 0 ]
-do
+# Stop recording and wait for the file to be finalized
+kill -INT "$PID"
+timeout 30 tail --pid="$PID" -f /dev/null
+rm -f "$PID_FILE"
+
+# Post-recording actions
+while [ $# -gt 0 ]; do
 	case "$1" in
-		--rename | -r)
+		-r|--rename)
 			result=$(mktemp)
 			prevloc=$(mktemp)
 			ROFI_SAVE_DIR="$SAVE_PATH" ROFI_SAVE_EXT=.mp4 ROFI_SAVE_RESULT="$result" ROFI_SAVE_PREVLOC="$prevloc" rofi -show save -modi "save:rofi-save" >/dev/null 2>&1
@@ -95,18 +121,14 @@ do
 					echo -n "$new" > "$LAST_FILE"
 				fi
 			fi
-			xclip -selection clipboard >&- 2>&- < "$LAST_FILE"
-			cat "$LAST_FILE"
-			;;
-		--echo | -e)
-			cat "$LAST_FILE"
-			;;
-		--xclip | -x)
-			xclip -selection clipboard >/dev/null 2>&1 < "$LAST_FILE"
-			;;
-		--play | -p)
-			nohup mplayer "$(cat "$LAST_FILE")" > /dev/null 2>&1 &
-			;;
+			clip < "$LAST_FILE"
+			cat "$LAST_FILE" ;;
+		-e|--echo)
+			cat "$LAST_FILE" ;;
+		-x|--xclip)
+			clip < "$LAST_FILE" ;;
+		-p|--play)
+			mplayer "$(cat "$LAST_FILE")" &>/dev/null & ;;
 	esac
 	shift
 done

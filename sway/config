@@ -1,0 +1,153 @@
+# sway: AeroSpace-style hjkl tiling, awesome's launcher/record bindings.
+# Cmd (Super) is the modifier, standing in for Opt on the mac.
+
+set $mod Mod4
+set $term ghostty
+
+include /etc/sway/config.d/*
+
+### Look
+
+font pango:JetBrainsMono Nerd Font 10
+default_border pixel 1
+default_floating_border pixel 1
+focus_follows_mouse no
+
+# class                 border  bg      text    indicator child_border
+client.focused          #83a598 #83a598 #1d2021 #83a598   #83a598
+client.focused_inactive #3c3836 #3c3836 #ebdbb2 #3c3836   #3c3836
+client.unfocused        #282828 #282828 #928374 #282828   #282828
+client.urgent           #fb4934 #fb4934 #1d2021 #fb4934   #fb4934
+
+output * bg #1d2021 solid_color
+# no exact 120Hz mode, so sway takes the fastest one at this size (119.97Hz)
+output * mode 5120x1440@120Hz
+
+bar {
+    swaybar_command waybar
+}
+
+### Windows
+
+for_window [window_role="pop-up"] floating enable
+
+### Autostart
+
+exec mako
+exec swayidle -w \
+    timeout 600 'swaymsg "output * power off"' \
+    resume 'swaymsg "output * power on"' \
+    before-sleep 'swaylock -f -c 1d2021'
+exec discord
+exec brave-browser
+
+### Focus / move (AeroSpace)
+
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+
+# tiles / stacking (pressing again flips the orientation) / floating
+bindsym $mod+m layout toggle split
+bindsym $mod+n layout toggle stacking tabbed
+bindsym $mod+b floating toggle
+# hjkl stays within tiled or floating windows; this jumps between them
+bindsym $mod+Shift+b focus mode_toggle
+
+bindsym $mod+minus resize shrink width 50px
+bindsym $mod+equal resize grow width 50px
+bindsym $mod+Shift+minus resize shrink height 50px
+bindsym $mod+Shift+equal resize grow height 50px
+
+floating_modifier $mod normal
+
+### Workspaces
+
+bindsym $mod+1 workspace number 1
+bindsym $mod+2 workspace number 2
+bindsym $mod+3 workspace number 3
+bindsym $mod+4 workspace number 4
+bindsym $mod+5 workspace number 5
+bindsym $mod+6 workspace number 6
+bindsym $mod+7 workspace number 7
+bindsym $mod+8 workspace number 8
+bindsym $mod+9 workspace number 9
+
+bindsym $mod+Shift+1 move container to workspace number 1
+bindsym $mod+Shift+2 move container to workspace number 2
+bindsym $mod+Shift+3 move container to workspace number 3
+bindsym $mod+Shift+4 move container to workspace number 4
+bindsym $mod+Shift+5 move container to workspace number 5
+bindsym $mod+Shift+6 move container to workspace number 6
+bindsym $mod+Shift+7 move container to workspace number 7
+bindsym $mod+Shift+8 move container to workspace number 8
+bindsym $mod+Shift+9 move container to workspace number 9
+
+bindsym $mod+Tab workspace back_and_forth
+bindsym $mod+Escape workspace back_and_forth
+bindsym $mod+Left workspace prev_on_output
+bindsym $mod+Right workspace next_on_output
+
+### Monitors
+
+bindsym $mod+Ctrl+j focus output right
+bindsym $mod+Ctrl+k focus output left
+bindsym $mod+o move container to output right
+bindsym $mod+Shift+Tab move workspace to output right
+
+### Service mode (AeroSpace)
+
+bindsym $mod+Shift+semicolon mode "service"
+
+mode "service" {
+    bindsym Escape reload; mode "default"
+    bindsym f floating toggle; mode "default"
+
+    # join with the neighbor: wrap it in a new container, then move in
+    bindsym h focus left; splitv; focus right; move left; mode "default"
+    bindsym l focus right; splitv; focus left; move right; mode "default"
+    bindsym k focus up; splith; focus down; move up; mode "default"
+    bindsym j focus down; splith; focus up; move down; mode "default"
+}
+
+### Client (awesome)
+
+bindsym $mod+f fullscreen toggle
+bindsym $mod+Ctrl+space floating toggle
+bindsym $mod+Shift+c kill
+# "minimize" / restore
+bindsym $mod+Shift+n move scratchpad
+bindsym $mod+Ctrl+n scratchpad show
+# closest thing to keep-on-top: show on every workspace (floating only)
+bindsym $mod+t sticky toggle
+bindsym $mod+u [urgent=latest] focus
+
+### Launchers
+
+bindsym $mod+Return exec $term
+bindsym $mod+r exec rofi -show drun
+bindsym $mod+p exec rofi -show run
+bindsym $mod+w exec rofi -show window
+bindsym $mod+space exec rofi-claude
+
+### Session
+
+bindsym $mod+Ctrl+r reload
+bindsym $mod+Ctrl+q exec swaylock -f -c 1d2021
+bindsym $mod+Shift+q exec swaynag -t warning -m 'Exit sway?' -B 'Exit' 'swaymsg exit'
+
+### Record
+
+bindsym $mod+s exec r=$(slurp) && grim -g "$r" - | wl-copy -t image/png && notify-send "screenshot copied to clipboard"
+bindsym $mod+Shift+s exec notify-send image "$(ri -p -e)"
+bindsym $mod+Ctrl+s exec notify-send image "$(ri -r)"
+
+bindsym $mod+v exec notify-send video "$(rv -x -e)"
+bindsym $mod+Shift+v exec notify-send video "$(rv -p -x -e)"
+bindsym $mod+Ctrl+v exec notify-send video "$(rv -r)"
