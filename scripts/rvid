@@ -15,6 +15,6 @@ ffmpeg \
   -c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p -g 120 -tune zerolatency \
   -c:a aac -b:a 160k \
   -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
-  -shortest -fflags +shortest -max_interleave_delta 0 \
+  -shortest -max_interleave_delta 0 \
   -map_metadata -1 -map_chapters -1 -movflags +faststart \
   "$1"

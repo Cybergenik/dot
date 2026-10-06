@@ -9,14 +9,13 @@ LAST_FILE=$SAVE_PATH.last
 mkdir -p "$SAVE_PATH"
 
 # SAVE ARGS
-ARGC=$#
-ARGV=$@
+ARGV=("$@")
 
 while [ ! $# -eq 0 ]
 do
 	case "$1" in
 		--name | -n)
-			FILE=$SAVE_PATH$2.mp4
+			FILE="$SAVE_PATH$2.mp4"
 			;;
 	esac
 	shift
@@ -24,30 +23,30 @@ done
 
 if [ -z "$FILE" ]
 then
-	FILE=$(date +$SAVE_PATH%Y%m%d-%H%M%S.mp4)
+	FILE=$(date +"${SAVE_PATH}%Y-%m-%d_%H-%M-%S.mp4")
 fi
 
 
 # RESTORE ARGS
-set -- $ARGV
+set -- "${ARGV[@]}"
 
 while [ ! $# -eq 0 ]
 do
 	case "$1" in
 		--copy | -c)
-			nohup bash -c 'cat '$LAST_FILE' | xclip &' > /dev/null 2>&1
+			xclip -selection clipboard >/dev/null 2>&1 < "$LAST_FILE"
 			exit 0
 			;;
 		--last | -l)
-			cat $LAST_FILE && echo
+			cat "$LAST_FILE" && echo
 			exit 0
 			;;
 		--view | -v)
 			if [ -z "$2" ]
 			then
-				nohup mplayer $(cat $LAST_FILE) > /dev/null 2>&1 &
+				nohup mplayer "$(cat "$LAST_FILE")" > /dev/null 2>&1 &
 			else
-				nohup mplayer $SAVE_PATH$2.mp4 > /dev/null 2>&1 &
+				nohup mplayer "$SAVE_PATH$2.mp4" > /dev/null 2>&1 &
 			fi
 			exit 0
 			;;
@@ -56,7 +55,7 @@ do
 done
 
 # RESTORE ARGS
-set -- $ARGV
+set -- "${ARGV[@]}"
 
 PS=$(pgrep -f "SCREEN -dmS $SCREEN")
 
@@ -67,9 +66,9 @@ then
 else
 	screen -dmS $SCREEN
 	sleep .2
-	screen -S $SCREEN -p 0 -X stuff "rvid $FILE; exit^M"
+	screen -S $SCREEN -p 0 -X stuff "rvid $(printf %q "$FILE"); exit^M"
 
-	nohup bash -c 'echo -n '$FILE' > '$LAST_FILE > /dev/null 2>&1
+	echo -n "$FILE" > "$LAST_FILE"
 
 	echo "recording!"
 	exit 0
@@ -96,17 +95,17 @@ do
 					echo -n "$new" > "$LAST_FILE"
 				fi
 			fi
-			xclip >&- 2>&- < "$LAST_FILE"
+			xclip -selection clipboard >&- 2>&- < "$LAST_FILE"
 			cat "$LAST_FILE"
 			;;
 		--echo | -e)
-			cat $LAST_FILE
+			cat "$LAST_FILE"
 			;;
 		--xclip | -x)
-			nohup bash -c 'cat '$LAST_FILE' | xclip &' > /dev/null 2>&1
+			xclip -selection clipboard >/dev/null 2>&1 < "$LAST_FILE"
 			;;
 		--play | -p)
-			nohup mplayer $(cat $LAST_FILE) > /dev/null 2>&1 &
+			nohup mplayer "$(cat "$LAST_FILE")" > /dev/null 2>&1 &
 			;;
 	esac
 	shift

@@ -436,12 +436,12 @@ clientkeys = awful.util.table.join(
     --- Record Video
 
     awful.key({ modkey }, "v",
-        function () awful.spawn.easy_async_with_shell("rv -e",
+        function () awful.spawn.easy_async_with_shell("rv -x -e",
             function (stdout) naughty.notify { text = "video: " .. stdout } end)
         end,
         {description = "video", group = "record"}),
     awful.key({ modkey, "Shift" }, "v",
-        function () awful.spawn.easy_async_with_shell("rv -p -e",
+        function () awful.spawn.easy_async_with_shell("rv -p -x -e",
             function (stdout) naughty.notify { text = "video: " .. stdout } end)
         end,
         {description = "video + mplayer", group = "record"}),
