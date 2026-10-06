@@ -11,7 +11,7 @@ vim.g.rg_derive_root = "true"
 vim.g.vim_be_good_log_file = 1
 vim.g.vim_apm_log = 1
 vim.g.loaded_matchparen = 1
-vim.g.rust_clip_command = "xclip -selection clipboard"
+vim.g.rust_clip_command = vim.fn.has("mac") == 1 and "pbcopy" or "wl-copy"
 vim.g.nvim_man_default_target = "horizontal"
 
 -- Neovide

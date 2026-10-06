@@ -10,20 +10,12 @@ mkdir -p "$SAVE_PATH"
 
 # copy stdin to the clipboard
 clip() {
-	if [ -n "$WAYLAND_DISPLAY" ]; then
-		wl-copy
-	else
-		xclip -selection clipboard
-	fi >/dev/null 2>&1
+	wl-copy >/dev/null 2>&1
 }
 
 # print the region to record as "X Y W H"
 select_region() {
-	if [ -n "$WAYLAND_DISPLAY" ]; then
-		slurp -f "%x %y %w %h"
-	else
-		slop -f "%x %y %w %h"
-	fi
+	slurp -f "%x %y %w %h"
 }
 
 # pid of the running recorder, if any
@@ -31,7 +23,7 @@ recorder_pid() {
 	local pid
 	pid=$(cat "$PID_FILE" 2>/dev/null) || return
 	case "$(cat "/proc/$pid/comm" 2>/dev/null)" in
-		ffmpeg|wf-recorder) echo "$pid" ;;
+		wf-recorder) echo "$pid" ;;
 	esac
 }
 
@@ -59,9 +51,9 @@ while [ $# -gt 0 ]; do
 			exit 0 ;;
 		-v|--view)
 			if [ -z "$2" ]; then
-				mplayer "$(cat "$LAST_FILE")" &>/dev/null &
+				mpv "$(cat "$LAST_FILE")" &>/dev/null &
 			else
-				mplayer "$SAVE_PATH$2.mp4" &>/dev/null &
+				mpv "$SAVE_PATH$2.mp4" &>/dev/null &
 			fi
 			exit 0 ;;
 	esac
@@ -125,10 +117,10 @@ while [ $# -gt 0 ]; do
 			cat "$LAST_FILE" ;;
 		-e|--echo)
 			cat "$LAST_FILE" ;;
-		-x|--xclip)
+		-x|--clip)
 			clip < "$LAST_FILE" ;;
 		-p|--play)
-			mplayer "$(cat "$LAST_FILE")" &>/dev/null & ;;
+			mpv "$(cat "$LAST_FILE")" &>/dev/null & ;;
 	esac
 	shift
 done

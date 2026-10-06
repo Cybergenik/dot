@@ -1,0 +1,27 @@
+#!/bin/bash
+# Open the default layout at login:
+#   1: brave | ghostty | brave     2: signal | proton mail | discord
+
+# wait (up to 30s) until workspace $1 holds at least $2 windows
+wait_for() {
+	for _ in $(seq 300); do
+		n=$(swaymsg -t get_tree | jq --arg ws "$1" \
+			'[.. | select(.type? == "workspace" and .name == $ws) | .. | select(.pid?)] | length')
+		[ "$n" -ge "$2" ] && return
+		sleep .1
+	done
+}
+
+swaymsg -q workspace number 2
+signal-desktop & wait_for 2 1
+proton-mail & wait_for 2 2
+discord & wait_for 2 3
+
+# brave restores both of its windows; ghostty goes between them. Sway's exit
+# kills brave, so it thinks it crashed: clear that to skip the restore prompt
+sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/' \
+	~/.config/BraveSoftware/Brave-Browser/Default/Preferences
+swaymsg -q workspace number 1
+brave-browser --restore-last-session & wait_for 1 2
+swaymsg -q focus left, focus left
+ghostty & wait_for 1 3

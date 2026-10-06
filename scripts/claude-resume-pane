@@ -74,7 +74,7 @@ fi
 stagger "$pane_index"
 
 if [ -n "$session_id" ]; then
-  exec "$claude_bin" --resume "$session_id" "$@"
+  exec -a claude "$claude_bin" --resume "$session_id" "$@"
 fi
 
-exec "$claude_bin" "$@"
+exec -a claude "$claude_bin" "$@"

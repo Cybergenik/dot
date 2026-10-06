@@ -8,21 +8,13 @@ mkdir -p "$SAVE_PATH"
 
 # copy stdin to the clipboard
 clip() {
-	if [ -n "$WAYLAND_DISPLAY" ]; then
-		wl-copy
-	else
-		xclip -selection clipboard
-	fi >/dev/null 2>&1
+	wl-copy >/dev/null 2>&1
 }
 
 # screenshot a selected region into $1
 capture() {
-	if [ -n "$WAYLAND_DISPLAY" ]; then
-		local region
-		region=$(slurp) && grim -g "$region" "$1"
-	else
-		maim -u -n 1 -s "$1"
-	fi
+	local region
+	region=$(slurp) && grim -g "$region" "$1"
 }
 
 ARGV=("$@")
@@ -49,9 +41,9 @@ while [ $# -gt 0 ]; do
 			exit 0 ;;
 		-v|--view)
 			if [ -z "$2" ]; then
-				feh "$(cat "$LAST_FILE")" &>/dev/null &
+				mpv --image-display-duration=inf "$(cat "$LAST_FILE")" &>/dev/null &
 			else
-				feh "$SAVE_PATH$2.png" &>/dev/null &
+				mpv --image-display-duration=inf "$SAVE_PATH$2.png" &>/dev/null &
 			fi
 			exit 0 ;;
 	esac
@@ -90,10 +82,10 @@ while [ $# -gt 0 ]; do
 			cat "$LAST_FILE" ;;
 		-e|--echo)
 			cat "$LAST_FILE" ;;
-		-x|--xclip)
+		-x|--clip)
 			clip < "$LAST_FILE" ;;
 		-p|--play)
-			feh "$(cat "$LAST_FILE")" &>/dev/null & ;;
+			mpv --image-display-duration=inf "$(cat "$LAST_FILE")" &>/dev/null & ;;
 	esac
 	shift
 done

@@ -1,0 +1,8 @@
+# /etc/greetd/config.toml: graphical login (gtkgreet in cage), then sway
+
+[terminal]
+vt = 7
+
+[default_session]
+command = "cage -s -- gtkgreet -x -s /etc/greetd/gtkgreet.css -c sway-session"
+user = "_greetd"

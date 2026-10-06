@@ -26,12 +26,20 @@ ln -sfn "$DOT/gh" "$HOME/.config/gh"
 
 # Linux-only configs
 if ! $IS_MAC; then
-    ln -sfn "$DOT/awesome" "$HOME/.config/awesome"
     ln -sfn "$DOT/rofi" "$HOME/.config/rofi"
     ln -sfn "$DOT/sway" "$HOME/.config/sway"
     ln -sfn "$DOT/waybar" "$HOME/.config/waybar"
     ln -sfn "$DOT/mako" "$HOME/.config/mako"
     ln -sf "$DOT/zsh/zprofile" "$HOME/.zprofile"
+
+    # login screen (greetd); its config lives here too
+    if [ -d /etc/greetd ]; then
+        echo "Linking greetd config (needs sudo)..."
+        for f in config.toml environments gtkgreet.css; do
+            sudo ln -sf "$DOT/greetd/$f" "/etc/greetd/$f"
+        done
+        sudo ln -sf "$DOT/scripts/sway-session" /usr/local/bin/sway-session
+    fi
 fi
 
 # Symlink scripts

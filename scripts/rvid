@@ -8,19 +8,6 @@ X=$1 Y=$2 W=$3 H=$4 FILE=$5
 # mic alsa_input.usb-Razer_Inc_Razer_Seiren_Mini_UC2447L03303339-00.mono-fallback
 AUDIO_SOURCE="$(pactl get-default-sink).monitor"
 
-if [ -n "$WAYLAND_DISPLAY" ]; then
-	exec wf-recorder -y -g "$X,$Y ${W}x$H" -r 60 --audio="$AUDIO_SOURCE" \
-		-c libx264 -p preset=veryfast -p crf=22 -p tune=zerolatency -x yuv420p \
-		-C aac -f "$FILE"
-fi
-
-exec ffmpeg -nostdin \
-  -framerate 60 -video_size "${W}x${H}" -f x11grab -use_wallclock_as_timestamps 1 -i "${DISPLAY}+${X},${Y}" \
-  -thread_queue_size 512 -f pulse -ac 2 -ar 48000 -i "$AUDIO_SOURCE" \
-  -map 0:v:0 -map 1:a:0 \
-  -c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p -g 120 -tune zerolatency \
-  -c:a aac -b:a 160k \
-  -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
-  -shortest -max_interleave_delta 0 \
-  -map_metadata -1 -map_chapters -1 -movflags +faststart \
-  "$FILE"
+exec wf-recorder -y -g "$X,$Y ${W}x$H" -r 60 --audio="$AUDIO_SOURCE" \
+	-c libx264 -p preset=veryfast -p crf=22 -p tune=zerolatency -x yuv420p \
+	-C aac -f "$FILE"

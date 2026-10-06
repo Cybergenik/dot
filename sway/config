@@ -1,4 +1,4 @@
-# sway: AeroSpace-style hjkl tiling, awesome's launcher/record bindings.
+# sway: AeroSpace-style hjkl tiling, plus launcher and record bindings.
 # Cmd (Super) is the modifier, standing in for Opt on the mac.
 
 set $mod Mod4
@@ -19,7 +19,7 @@ client.focused_inactive #3c3836 #3c3836 #ebdbb2 #3c3836   #3c3836
 client.unfocused        #282828 #282828 #928374 #282828   #282828
 client.urgent           #fb4934 #fb4934 #1d2021 #fb4934   #fb4934
 
-output * bg #1d2021 solid_color
+output * bg ~/dot/wallpapers/civ4-wide.png fill
 # no exact 120Hz mode, so sway takes the fastest one at this size (119.97Hz)
 output * mode 5120x1440@120Hz
 
@@ -30,16 +30,19 @@ bar {
 ### Windows
 
 for_window [window_role="pop-up"] floating enable
+assign [app_id="signal"] workspace number 2
+assign [app_id="Proton Mail"] workspace number 2
+assign [app_id="discord"] workspace number 2
 
 ### Autostart
 
 exec mako
+# lock after 10 minutes idle, screen off at 15
 exec swayidle -w \
-    timeout 600 'swaymsg "output * power off"' \
-    resume 'swaymsg "output * power on"' \
-    before-sleep 'swaylock -f -c 1d2021'
-exec discord
-exec brave-browser
+    timeout 600 'swaylock -f -i ~/dot/wallpapers/civ4-wide.png' \
+    timeout 900 'swaymsg "output * power off"' \
+    resume 'swaymsg "output * power on"'
+exec sway-startup
 
 ### Focus / move (AeroSpace)
 
@@ -116,11 +119,11 @@ mode "service" {
     bindsym j focus down; splith; focus up; move down; mode "default"
 }
 
-### Client (awesome)
+### Client
 
 bindsym $mod+f fullscreen toggle
 bindsym $mod+Ctrl+space floating toggle
-bindsym $mod+Shift+c kill
+bindsym $mod+q kill
 # "minimize" / restore
 bindsym $mod+Shift+n move scratchpad
 bindsym $mod+Ctrl+n scratchpad show
@@ -139,7 +142,7 @@ bindsym $mod+space exec rofi-claude
 ### Session
 
 bindsym $mod+Ctrl+r reload
-bindsym $mod+Ctrl+q exec swaylock -f -c 1d2021
+bindsym $mod+Ctrl+q exec swaylock -f -i ~/dot/wallpapers/civ4-wide.png
 bindsym $mod+Shift+q exec swaynag -t warning -m 'Exit sway?' -B 'Exit' 'swaymsg exit'
 
 ### Record
