@@ -12,6 +12,11 @@ wait_for() {
 	done
 }
 
+# Faugus (flatpak) never drops games that died with the last session, so a
+# stale pid makes it think Battle.net is still running. Nothing survives a
+# reboot, so start clean.
+echo '{}' > ~/.var/app/io.github.Faugus.faugus-launcher/.local/state/faugus-launcher/running-games.json 2>/dev/null
+
 # workspace 2 fills in the background: assign rules in the sway config send
 # these there without switching, and launching one at a time keeps the order
 (
