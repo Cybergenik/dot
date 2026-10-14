@@ -146,11 +146,13 @@ bindsym $mod+Ctrl+q exec swaylock -f -i ~/dot/wallpapers/civ4-wide.png
 bindsym $mod+Shift+q exec swaynag -t warning -m 'Exit sway?' -B 'Exit' 'swaymsg exit'
 
 ### Record
+# pressing again while choosing a region cancels the selection. sway splits
+# commands on ";" even inside exec, so the shell parts are single-quoted
 
-bindsym $mod+s exec r=$(slurp) && grim -g "$r" - | wl-copy -t image/png && notify-send "screenshot copied to clipboard"
-bindsym $mod+Shift+s exec notify-send image "$(ri -p -e)"
-bindsym $mod+Ctrl+s exec notify-send image "$(ri -r)"
+bindsym $mod+s exec pkill -x slurp || sh -c 'r=$(slurp) && grim -g "$r" - | wl-copy -t image/png && notify-send "screenshot copied to clipboard"'
+bindsym $mod+Shift+s exec pkill -x slurp || sh -c 'o=$(ri -p -e); [ -n "$o" ] && notify-send image "$o"'
+bindsym $mod+Ctrl+s exec pkill -x slurp || sh -c 'o=$(ri -r); [ -n "$o" ] && notify-send image "$o"'
 
-bindsym $mod+v exec notify-send video "$(rv -x -e)"
-bindsym $mod+Shift+v exec notify-send video "$(rv -p -x -e)"
-bindsym $mod+Ctrl+v exec notify-send video "$(rv -r)"
+bindsym $mod+v exec pkill -x slurp || sh -c 'o=$(rv -x -e); [ -n "$o" ] && notify-send video "$o"'
+bindsym $mod+Shift+v exec pkill -x slurp || sh -c 'o=$(rv -p -x -e); [ -n "$o" ] && notify-send video "$o"'
+bindsym $mod+Ctrl+v exec pkill -x slurp || sh -c 'o=$(rv -r); [ -n "$o" ] && notify-send video "$o"'
