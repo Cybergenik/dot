@@ -9,6 +9,11 @@ fi
 # GVM (must be before all, because they're shit devs)
 [[ -s "$HOME/.gvm/scripts/gvm" ]] && source "$HOME/.gvm/scripts/gvm"
 
+# Set TERM before instant prompt: p10k stamps its cache with whether TERM was
+# screen*/tmux* when it wrote it (end of startup). If TERM only changes later,
+# every tmux pane fails that check and instant prompt never shows.
+export TERM="xterm-256color"
+
 # P10K Instant Prompt
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
@@ -79,7 +84,6 @@ fi
 #export SHELL="zsh"
 export EDITOR="nvim"
 export VISUAL="nvim"
-export TERM="xterm-256color"
 export LANG="en_US.UTF-8"
 export LC_ALL="en_US.UTF-8"
 export LC_CTYPE="en_US.UTF-8"
